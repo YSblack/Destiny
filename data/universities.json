@@ -1,0 +1,207 @@
+{
+  "清华大学": {
+    "category": "985",
+    "type": "理工类",
+    "location": {
+      "province": "北京",
+      "city": "北京"
+    },
+    "establishment_year": 1911,
+    "motto": "自强不息，厚德载物",
+    "website": "https://www.tsinghua.edu.cn",
+    "is_double_first_class": true,
+    "key_disciplines": [
+      "工学",
+      "理学",
+      "管理学",
+      "经济学"
+    ],
+    "campus_area": 462.74,
+    "student_count": 53000,
+    "faculty_count": 3485,
+    "library_books": 543.8,
+    "research_funding": 89.6
+  },
+  "北京大学": {
+    "category": "985",
+    "type": "综合类",
+    "location": {
+      "province": "北京",
+      "city": "北京"
+    },
+    "establishment_year": 1898,
+    "motto": "爱国、进步、民主、科学",
+    "website": "https://www.pku.edu.cn",
+    "is_double_first_class": true,
+    "key_disciplines": [
+      "文学",
+      "理学",
+      "医学",
+      "经济学"
+    ],
+    "campus_area": 274.0,
+    "student_count": 48000,
+    "faculty_count": 2981,
+    "library_books": 1300.0,
+    "research_funding": 76.8
+  },
+  "中国人民大学": {
+    "category": "985",
+    "type": "综合类",
+    "location": {
+      "province": "北京",
+      "city": "北京"
+    },
+    "establishment_year": 1937,
+    "motto": "实事求是",
+    "website": "https://www.ruc.edu.cn",
+    "is_double_first_class": true,
+    "key_disciplines": [
+      "经济学",
+      "法学",
+      "管理学",
+      "哲学"
+    ],
+    "campus_area": 230.0,
+    "student_count": 28000,
+    "faculty_count": 1883,
+    "library_books": 432.0,
+    "research_funding": 12.5
+  },
+  "复旦大学": {
+    "category": "985",
+    "type": "综合类",
+    "location": {
+      "province": "上海",
+      "city": "上海"
+    },
+    "establishment_year": 1905,
+    "motto": "博学而笃行，切问而近思",
+    "website": "https://www.fudan.edu.cn",
+    "is_double_first_class": true,
+    "key_disciplines": [
+      "医学",
+      "文学",
+      "理学",
+      "经济学"
+    ],
+    "campus_area": 243.9,
+    "student_count": 32000,
+    "faculty_count": 2787,
+    "library_books": 678.0,
+    "research_funding": 23.7
+  },
+  "上海交通大学": {
+    "category": "985",
+    "type": "理工类",
+    "location": {
+      "province": "上海",
+      "city": "上海"
+    },
+    "establishment_year": 1896,
+    "motto": "饮水思源，爱国荣校",
+    "website": "https://www.sjtu.edu.cn",
+    "is_double_first_class": true,
+    "key_disciplines": [
+      "工学",
+      "医学",
+      "理学",
+      "管理学"
+    ],
+    "campus_area": 300.0,
+    "student_count": 46000,
+    "faculty_count": 3061,
+    "library_books": 296.0,
+    "research_funding": 47.3
+  },
+  "浙江大学": {
+    "category": "985",
+    "type": "综合类",
+    "location": {
+      "province": "浙江",
+      "city": "杭州"
+    },
+    "establishment_year": 1897,
+    "motto": "求是创新",
+    "website": "https://www.zju.edu.cn",
+    "is_double_first_class": true,
+    "key_disciplines": [
+      "工学",
+      "理学",
+      "医学",
+      "管理学"
+    ],
+    "campus_area": 600.0,
+    "student_count": 60000,
+    "faculty_count": 3739,
+    "library_books": 739.0,
+    "research_funding": 58.9
+  },
+  "中山大学": {
+    "category": "985",
+    "type": "综合类",
+    "location": {
+      "province": "广东",
+      "city": "广州"
+    },
+    "establishment_year": 1924,
+    "motto": "博学、审问、慎思、明辨、笃行",
+    "website": "https://www.sysu.edu.cn",
+    "is_double_first_class": true,
+    "key_disciplines": [
+      "医学",
+      "理学",
+      "文学",
+      "管理学"
+    ],
+    "campus_area": 574.0,
+    "student_count": 55000,
+    "faculty_count": 4022,
+    "library_books": 673.0,
+    "research_funding": 32.8
+  },
+  "北京理工大学": {
+    "category": "211",
+    "type": "理工类",
+    "location": {
+      "province": "北京",
+      "city": "北京"
+    },
+    "establishment_year": 1940,
+    "motto": "德以明理，学以精工",
+    "website": "https://www.bit.edu.cn",
+    "is_double_first_class": true,
+    "key_disciplines": [
+      "工学",
+      "理学",
+      "管理学"
+    ],
+    "campus_area": 327.0,
+    "student_count": 30000,
+    "faculty_count": 3315,
+    "library_books": 298.0,
+    "research_funding": 39.7
+  },
+  "华南理工大学": {
+    "category": "211",
+    "type": "理工类",
+    "location": {
+      "province": "广东",
+      "city": "广州"
+    },
+    "establishment_year": 1952,
+    "motto": "博学慎思，明辨笃行",
+    "website": "https://www.scut.edu.cn",
+    "is_double_first_class": true,
+    "key_disciplines": [
+      "工学",
+      "理学",
+      "管理学"
+    ],
+    "campus_area": 521.0,
+    "student_count": 46000,
+    "faculty_count": 2447,
+    "library_books": 386.0,
+    "research_funding": 25.6
+  }
+}

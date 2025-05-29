@@ -1,0 +1,15 @@
+flask==2.3.2
+pandas==2.0.3
+numpy==1.24.3
+matplotlib==3.7.1
+seaborn==0.12.2
+plotly==5.15.0
+requests==2.31.0
+beautifulsoup4==4.12.2
+python-dotenv==1.0.0
+openpyxl==3.1.2
+scipy==1.11.1
+lxml==4.9.3
+html5lib==1.1
+fake_useragent==1.4.0
+urllib3==2.0.4 
