@@ -45,11 +45,8 @@ pip install -r requirements.txt
 ```
 
 3. **启动系统**
-```bash
-# 推荐使用项目环境
-/Users/xz/Documents/gkxt/.conda/bin/python app.py
 
-# 或使用系统Python
+# 使用系统Python
 python app.py
 ```
 
