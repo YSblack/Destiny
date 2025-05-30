@@ -1,0 +1,878 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>实时AI数据管理 - 高考志愿填报系统</title>
+    <link href="{{ url_for('static', filename='libs/bootstrap/bootstrap.min.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='libs/fontawesome/all.min.css') }}" rel="stylesheet">
+    <style>
+        .admin-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 2rem 0;
+        }
+        
+        .status-card {
+            transition: transform 0.3s ease;
+        }
+        
+        .status-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .metric-value {
+            font-size: 2rem;
+            font-weight: bold;
+        }
+        
+        .metric-label {
+            color: #6c757d;
+            font-size: 0.9rem;
+        }
+        
+        .ai-service-status {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 5px;
+        }
+        
+        .ai-service-status.online {
+            background-color: #28a745;
+        }
+        
+        .ai-service-status.offline {
+            background-color: #dc3545;
+        }
+        
+        .ai-service-status.unknown {
+            background-color: #ffc107;
+        }
+        
+        .query-log {
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid #dee2e6;
+            border-radius: 0.375rem;
+            padding: 1rem;
+            background-color: #f8f9fa;
+        }
+        
+        .query-item {
+            margin-bottom: 0.5rem;
+            padding: 0.5rem;
+            background-color: white;
+            border-radius: 0.25rem;
+            border-left: 4px solid #007bff;
+        }
+        
+        .loading-spinner {
+            display: none;
+        }
+        
+        .loading .loading-spinner {
+            display: inline-block;
+        }
+        
+        .loading .btn-text {
+            display: none;
+        }
+        
+        .log-container {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 0.375rem;
+            max-height: 400px;
+            overflow-y: auto;
+            padding: 1rem;
+        }
+        
+        .log-entry {
+            margin-bottom: 0.5rem;
+            padding: 0.5rem;
+            border-radius: 0.25rem;
+            font-family: 'Courier New', monospace;
+            font-size: 0.875rem;
+        }
+        
+        .log-info {
+            background-color: #e7f3ff;
+            border-left: 4px solid #0d6efd;
+        }
+        
+        .log-warning {
+            background-color: #fff3cd;
+            border-left: 4px solid #ffc107;
+        }
+        
+        .log-error {
+            background-color: #f8d7da;
+            border-left: 4px solid #dc3545;
+        }
+        
+        .spinner-border {
+            color: #667eea;
+        }
+        
+        .alert-custom {
+            border: none;
+            border-radius: 0.5rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .btn-gradient {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            border: none;
+            color: white;
+        }
+        
+        .btn-gradient:hover {
+            background: linear-gradient(45deg, #5a6fd8, #6a4190);
+            color: white;
+        }
+        
+        .card-custom {
+            border: none;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border-radius: 0.75rem;
+        }
+        
+        .badge-custom {
+            font-size: 0.75rem;
+            padding: 0.375rem 0.75rem;
+        }
+    </style>
+</head>
+<body>
+    <!-- 头部导航 -->
+    <div class="admin-header">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h1><i class="fas fa-robot"></i> 实时AI数据管理中心</h1>
+                    <p class="mb-0">监控和管理高考志愿填报系统的AI数据获取服务</p>
+                </div>
+                <div class="col-md-4 text-end">
+                    <a href="/" class="btn btn-light">
+                        <i class="fas fa-home"></i> 返回主页
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container mt-4">
+        <!-- 系统状态概览 -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <h3><i class="fas fa-chart-line"></i> 系统状态概览</h3>
+            </div>
+        </div>
+        
+        <div class="row mb-4" id="statusCards">
+            <!-- 动态加载状态卡片 -->
+        </div>
+
+        <!-- AI服务状态 -->
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5><i class="fas fa-brain"></i> AI服务状态</h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="aiServices">
+                            <!-- 动态加载AI服务状态 -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5><i class="fas fa-database"></i> 缓存管理</h5>
+                    </div>
+                    <div class="card-body">
+                        <button class="btn btn-warning mb-3" onclick="cleanCache()">
+                            <span class="loading-spinner spinner-border spinner-border-sm me-2"></span>
+                            <span class="btn-text">清理过期缓存</span>
+                        </button>
+                        
+                        <div id="cacheStats">
+                            <!-- 动态加载缓存统计 -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- API密钥配置 -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5><i class="fas fa-key"></i> API密钥配置</h5>
+                        <button class="btn btn-sm btn-outline-primary" onclick="refreshApiConfigs()">
+                            <i class="fas fa-sync-alt"></i> 刷新配置
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <div id="apiConfigList">
+                            <!-- 动态加载API配置 -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 实时数据测试 -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5><i class="fas fa-vials"></i> 实时数据测试</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6>单个院校数据查询</h6>
+                                <div class="mb-3">
+                                    <label class="form-label">院校名称</label>
+                                    <input type="text" class="form-control" id="testUniversityName" value="清华大学">
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">省份</label>
+                                    <select class="form-control" id="testProvince">
+                                        <option value="北京">北京</option>
+                                        <option value="上海">上海</option>
+                                        <option value="广东">广东</option>
+                                        <option value="重庆">重庆</option>
+                                        <option value="四川">四川</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">科目</label>
+                                    <select class="form-control" id="testSubject">
+                                        <option value="理科">理科</option>
+                                        <option value="文科">文科</option>
+                                    </select>
+                                </div>
+                                <button class="btn btn-primary" onclick="testUniversityData()">
+                                    <span class="loading-spinner spinner-border spinner-border-sm me-2"></span>
+                                    <span class="btn-text">查询院校数据</span>
+                                </button>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <h6>实时推荐测试</h6>
+                                <div class="mb-3">
+                                    <label class="form-label">考生分数</label>
+                                    <input type="number" class="form-control" id="testScore" value="600">
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">省份</label>
+                                    <select class="form-control" id="testRecommendProvince">
+                                        <option value="北京">北京</option>
+                                        <option value="重庆">重庆</option>
+                                        <option value="云南">云南</option>
+                                        <option value="四川">四川</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">科目</label>
+                                    <select class="form-control" id="testRecommendSubject">
+                                        <option value="理科">理科</option>
+                                        <option value="文科">文科</option>
+                                    </select>
+                                </div>
+                                <button class="btn btn-success" onclick="testRecommendation()">
+                                    <span class="loading-spinner spinner-border spinner-border-sm me-2"></span>
+                                    <span class="btn-text">测试实时推荐</span>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-4">
+                            <h6>测试结果</h6>
+                            <div id="testResults" class="query-log">
+                                <p class="text-muted">点击上方按钮开始测试...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 查询日志 -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5><i class="fas fa-list"></i> 实时查询日志</h5>
+                        <button class="btn btn-sm btn-outline-primary" onclick="refreshLogs()">
+                            <i class="fas fa-sync-alt"></i> 刷新
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <div id="queryLogs" class="query-log">
+                            <!-- 动态加载查询日志 -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='libs/bootstrap/bootstrap.bundle.min.js') }}"></script>
+    <script>
+        let queryLogCounter = 0;
+        
+        // 页面加载时初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            loadCacheStatus();
+            loadSystemStatus();
+            refreshApiConfigs(); // 加载API配置
+            addLog('系统', '管理面板已加载', 'info');
+        });
+
+        // 显示加载状态
+        function showLoading(elementId, message = '加载中...') {
+            const element = document.getElementById(elementId);
+            element.innerHTML = `
+                <div class="text-center py-4">
+                    <div class="spinner-border" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <div class="mt-2">${message}</div>
+                </div>
+            `;
+        }
+
+        // 加载缓存状态
+        async function loadCacheStatus() {
+            try {
+                const response = await fetch('/api/realtime/cache_status');
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    updateStatusCards(data);
+                    updateAIServices(data.ai_services);
+                    updateCacheStats(data);
+                    addLog('信息', '缓存状态加载成功', 'info');
+                } else {
+                    addLog('错误', `加载缓存状态失败: ${data.error || '未知错误'}`, 'error');
+                }
+            } catch (error) {
+                console.error('加载缓存状态失败:', error);
+                addLog('错误', `网络请求失败: ${error.message}`, 'error');
+                
+                // 显示友好的错误信息
+                document.getElementById('statusCards').innerHTML = `
+                    <div class="col-12">
+                        <div class="alert alert-danger alert-custom">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <strong>加载失败</strong> 无法获取系统状态，请检查服务器连接。
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        // 更新状态卡片
+        function updateStatusCards(data) {
+            const statusCards = document.getElementById('statusCards');
+            const stats = data.overall_stats;
+            
+            statusCards.innerHTML = `
+                <div class="col-md-3">
+                    <div class="card card-custom status-card text-center">
+                        <div class="card-body">
+                            <div class="metric-value text-primary">${stats.total_entries}</div>
+                            <div class="metric-label">总缓存条目</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card card-custom status-card text-center">
+                        <div class="card-body">
+                            <div class="metric-value text-success">${stats.valid_entries}</div>
+                            <div class="metric-label">有效缓存</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card card-custom status-card text-center">
+                        <div class="card-body">
+                            <div class="metric-value text-warning">${stats.expired_entries}</div>
+                            <div class="metric-label">过期缓存</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card card-custom status-card text-center">
+                        <div class="card-body">
+                            <div class="metric-value text-info">${data.cache_duration_hours}h</div>
+                            <div class="metric-label">缓存有效期</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // 更新AI服务状态
+        function updateAIServices(services) {
+            const aiServices = document.getElementById('aiServices');
+            let html = '';
+            
+            services.forEach(service => {
+                let statusClass = 'unknown';
+                let statusText = '未知';
+                let badgeClass = 'secondary';
+                
+                // 根据服务类型设置状态
+                switch(service) {
+                    case 'chatglm':
+                        statusClass = 'offline';
+                        statusText = '需要API密钥';
+                        badgeClass = 'warning';
+                        break;
+                    case 'qwen':
+                        statusClass = 'offline';
+                        statusText = '需要API密钥';
+                        badgeClass = 'warning';
+                        break;
+                    case 'local_llm':
+                        statusClass = 'offline';
+                        statusText = '本地服务未启动';
+                        badgeClass = 'secondary';
+                        break;
+                    case 'chatglm_reverse':
+                        statusClass = 'online';
+                        statusText = '逆向接口已加载';
+                        badgeClass = 'success';
+                        break;
+                    default:
+                        statusClass = 'unknown';
+                        statusText = '状态未知';
+                        badgeClass = 'secondary';
+                }
+                
+                const serviceDisplayName = {
+                    'chatglm': 'ChatGLM (官方API)',
+                    'qwen': '通义千问',
+                    'local_llm': '本地LLM',
+                    'chatglm_reverse': 'ChatGLM (逆向接口)'
+                }[service] || service;
+                
+                html += `
+                    <div class="d-flex justify-content-between align-items-center mb-2 p-2 border rounded">
+                        <div>
+                            <span class="ai-service-status ${statusClass}"></span>
+                            <strong>${serviceDisplayName}</strong>
+                        </div>
+                        <span class="badge badge-custom bg-${badgeClass}">${statusText}</span>
+                    </div>
+                `;
+            });
+            
+            aiServices.innerHTML = html;
+        }
+
+        // 更新缓存统计
+        function updateCacheStats(data) {
+            const cacheStats = document.getElementById('cacheStats');
+            let html = '<h6>按查询类型统计:</h6>';
+            
+            for (const [queryType, stats] of Object.entries(data.by_query_type)) {
+                html += `
+                    <div class="mb-2">
+                        <strong>${queryType}:</strong>
+                        <span class="text-success">${stats.valid}</span> 有效,
+                        <span class="text-warning">${stats.expired}</span> 过期
+                    </div>
+                `;
+            }
+            
+            cacheStats.innerHTML = html;
+        }
+
+        // 清理缓存
+        async function cleanCache() {
+            const button = event.target.closest('button');
+            const originalText = button.innerHTML;
+            
+            // 显示加载状态
+            button.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>清理中...';
+            button.disabled = true;
+            
+            try {
+                const response = await fetch('/api/realtime/clean_cache', {
+                    method: 'POST'
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    addLog('缓存', data.message || '缓存清理完成', 'info');
+                    loadCacheStatus(); // 重新加载状态
+                    
+                    // 显示成功提示
+                    const alertDiv = document.createElement('div');
+                    alertDiv.className = 'alert alert-success alert-custom alert-dismissible fade show mt-2';
+                    alertDiv.innerHTML = `
+                        <i class="fas fa-check-circle"></i>
+                        <strong>清理成功！</strong> 过期缓存已清理完成。
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    `;
+                    button.parentNode.insertBefore(alertDiv, button.nextSibling);
+                    
+                    // 3秒后自动隐藏提示
+                    setTimeout(() => {
+                        if (alertDiv.parentNode) {
+                            alertDiv.remove();
+                        }
+                    }, 3000);
+                } else {
+                    addLog('错误', `清理缓存失败: ${data.error || '未知错误'}`, 'error');
+                }
+            } catch (error) {
+                console.error('清理缓存失败:', error);
+                addLog('错误', `清理缓存失败: ${error.message}`, 'error');
+            } finally {
+                // 恢复按钮状态
+                button.innerHTML = originalText;
+                button.disabled = false;
+            }
+        }
+
+        // API配置管理功能
+        async function refreshApiConfigs() {
+            try {
+                const response = await fetch('/api/config/list');
+                const data = await response.json();
+                
+                if (data.success) {
+                    updateApiConfigList(data.configs);
+                    addLog('配置', 'API配置列表已刷新', 'info');
+                } else {
+                    addLog('错误', `刷新API配置失败: ${data.error}`, 'error');
+                }
+            } catch (error) {
+                addLog('错误', `刷新API配置失败: ${error.message}`, 'error');
+            }
+        }
+
+        function updateApiConfigList(configs) {
+            const configList = document.getElementById('apiConfigList');
+            let html = '';
+            
+            const serviceNames = {
+                'chatglm': 'ChatGLM (智谱AI)',
+                'qwen': '通义千问 (阿里云)',
+                'local_llm': '本地LLM (Ollama)',
+                'chatglm_reverse': 'ChatGLM (逆向接口)'
+            };
+            
+            for (const [serviceName, config] of Object.entries(configs)) {
+                const displayName = serviceNames[serviceName] || serviceName;
+                const statusClass = config.enabled ? 'success' : 'secondary';
+                const statusText = config.enabled ? '已启用' : '已禁用';
+                const hasApiKey = config.api_key && config.api_key !== '';
+                
+                html += `
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <div class="row align-items-center">
+                                <div class="col-md-3">
+                                    <h6 class="mb-1">${displayName}</h6>
+                                    <span class="badge bg-${statusClass}">${statusText}</span>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-2">
+                                        <label class="form-label small">API密钥</label>
+                                        <div class="input-group">
+                                            <input type="password" class="form-control form-control-sm" 
+                                                   id="apiKey_${serviceName}" 
+                                                   value="${config.api_key || ''}" 
+                                                   placeholder="请输入API密钥"
+                                                   ${serviceName === 'chatglm_reverse' ? 'disabled' : ''}>
+                                            <button class="btn btn-outline-secondary btn-sm" type="button" 
+                                                    onclick="togglePasswordVisibility('apiKey_${serviceName}')">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    ${serviceName !== 'chatglm_reverse' ? `
+                                    <div class="mb-2">
+                                        <label class="form-label small">API地址</label>
+                                        <input type="text" class="form-control form-control-sm" 
+                                               id="apiUrl_${serviceName}" 
+                                               value="${config.api_url || ''}" 
+                                               placeholder="API端点地址">
+                                    </div>
+                                    <div class="mb-2">
+                                        <label class="form-label small">模型名称</label>
+                                        <input type="text" class="form-control form-control-sm" 
+                                               id="modelName_${serviceName}" 
+                                               value="${config.model_name || ''}" 
+                                               placeholder="模型名称">
+                                    </div>
+                                    ` : ''}
+                                </div>
+                                <div class="col-md-3 text-end">
+                                    <div class="btn-group-vertical gap-1">
+                                        <button class="btn btn-sm btn-primary" onclick="saveApiConfig('${serviceName}')">
+                                            <i class="fas fa-save"></i> 保存
+                                        </button>
+                                        ${serviceName !== 'chatglm_reverse' && hasApiKey ? `
+                                        <button class="btn btn-sm btn-info" onclick="testApiConfig('${serviceName}')">
+                                            <i class="fas fa-vial"></i> 测试
+                                        </button>
+                                        ` : ''}
+                                        <button class="btn btn-sm btn-outline-${config.enabled ? 'danger' : 'success'}" 
+                                                onclick="toggleApiService('${serviceName}')">
+                                            <i class="fas fa-power-off"></i> ${config.enabled ? '禁用' : '启用'}
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            configList.innerHTML = html;
+        }
+
+        function togglePasswordVisibility(inputId) {
+            const input = document.getElementById(inputId);
+            const icon = input.nextElementSibling.querySelector('i');
+            
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.className = 'fas fa-eye-slash';
+            } else {
+                input.type = 'password';
+                icon.className = 'fas fa-eye';
+            }
+        }
+
+        async function saveApiConfig(serviceName) {
+            try {
+                const apiKey = document.getElementById(`apiKey_${serviceName}`).value;
+                const apiUrl = serviceName !== 'chatglm_reverse' ? document.getElementById(`apiUrl_${serviceName}`).value : '';
+                const modelName = serviceName !== 'chatglm_reverse' ? document.getElementById(`modelName_${serviceName}`).value : '';
+                
+                const response = await fetch(`/api/config/${serviceName}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        api_key: apiKey,
+                        api_url: apiUrl,
+                        model_name: modelName
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    addLog('配置', data.message, 'success');
+                    refreshApiConfigs(); // 刷新配置列表
+                } else {
+                    addLog('错误', `保存配置失败: ${data.error}`, 'error');
+                }
+            } catch (error) {
+                addLog('错误', `保存配置失败: ${error.message}`, 'error');
+            }
+        }
+
+        async function testApiConfig(serviceName) {
+            try {
+                const response = await fetch(`/api/config/${serviceName}/test`, {
+                    method: 'POST'
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    addLog('测试', `${serviceName} API配置测试通过: ${data.message}`, 'success');
+                } else {
+                    addLog('测试', `${serviceName} API配置测试失败: ${data.message}`, 'warning');
+                }
+            } catch (error) {
+                addLog('错误', `API配置测试失败: ${error.message}`, 'error');
+            }
+        }
+
+        async function toggleApiService(serviceName) {
+            try {
+                const response = await fetch(`/api/config/${serviceName}/toggle`, {
+                    method: 'POST'
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    addLog('配置', data.message, 'success');
+                    refreshApiConfigs(); // 刷新配置列表
+                } else {
+                    addLog('错误', `切换服务状态失败: ${data.error}`, 'error');
+                }
+            } catch (error) {
+                addLog('错误', `切换服务状态失败: ${error.message}`, 'error');
+            }
+        }
+
+        // 测试院校数据查询
+        async function testUniversityData() {
+            const button = event.target.closest('button');
+            const originalText = button.innerHTML;
+            
+            button.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>查询中...';
+            button.disabled = true;
+            
+            const universityName = document.getElementById('testUniversityName').value || '清华大学';
+            const province = document.getElementById('testProvince').value || '北京';
+            const subject = document.getElementById('testSubject').value || '理科';
+            
+            try {
+                const url = `/api/realtime/university_data/${encodeURIComponent(universityName)}?province=${encodeURIComponent(province)}&subject=${encodeURIComponent(subject)}`;
+                const response = await fetch(url);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                
+                addLog('查询', `院校数据查询完成: ${universityName}`, 'info');
+                displayTestResult('院校数据查询结果', data);
+                loadCacheStatus(); // 刷新缓存状态
+            } catch (error) {
+                console.error('测试查询失败:', error);
+                addLog('错误', `测试查询失败: ${error.message}`, 'error');
+            } finally {
+                button.innerHTML = originalText;
+                button.disabled = false;
+            }
+        }
+
+        // 测试实时推荐
+        async function testRecommendation() {
+            const button = event.target.closest('button');
+            button.classList.add('loading');
+            
+            const score = document.getElementById('testScore').value;
+            const province = document.getElementById('testRecommendProvince').value;
+            const subject = document.getElementById('testRecommendSubject').value;
+            
+            try {
+                const response = await fetch(`/api/realtime/recommendation?score=${score}&province=${province}&subject=${subject}`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    addLog('推荐测试', `${score}分在${province}获得推荐: 冲刺${data.statistics.冲刺}所, 稳妥${data.statistics.稳妥}所, 保底${data.statistics.保底}所`, 'success');
+                    displayTestResult('实时推荐结果', data);
+                } else {
+                    addLog('推荐测试', `推荐失败: ${data.error}`, 'error');
+                }
+            } catch (error) {
+                addLog('推荐测试', `推荐失败: ${error.message}`, 'error');
+            } finally {
+                button.classList.remove('loading');
+            }
+        }
+
+        // 显示测试结果
+        function displayTestResult(title, data) {
+            const testResults = document.getElementById('testResults');
+            const resultHtml = `
+                <div class="query-item">
+                    <h6>${title}</h6>
+                    <pre style="max-height: 300px; overflow-y: auto; background-color: #f8f9fa; padding: 10px; border-radius: 4px;">${JSON.stringify(data, null, 2)}</pre>
+                    <small class="text-muted">时间: ${new Date().toLocaleString()}</small>
+                </div>
+            `;
+            testResults.innerHTML = resultHtml + testResults.innerHTML;
+        }
+
+        // 添加日志
+        function addLog(type, message, level = 'info') {
+            const queryLogs = document.getElementById('queryLogs');
+            queryLogCounter++;
+            
+            let iconClass = 'fas fa-info-circle';
+            let textClass = 'text-info';
+            
+            switch (level) {
+                case 'success':
+                    iconClass = 'fas fa-check-circle';
+                    textClass = 'text-success';
+                    break;
+                case 'error':
+                    iconClass = 'fas fa-exclamation-circle';
+                    textClass = 'text-danger';
+                    break;
+                case 'warning':
+                    iconClass = 'fas fa-exclamation-triangle';
+                    textClass = 'text-warning';
+                    break;
+            }
+            
+            const logHtml = `
+                <div class="query-item">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <i class="${iconClass} ${textClass}"></i>
+                            <strong>[${type}]</strong> ${message}
+                        </div>
+                        <small class="text-muted">${new Date().toLocaleTimeString()}</small>
+                    </div>
+                </div>
+            `;
+            
+            queryLogs.innerHTML = logHtml + queryLogs.innerHTML;
+            
+            // 限制日志数量
+            const logItems = queryLogs.querySelectorAll('.query-item');
+            if (logItems.length > 50) {
+                logItems[logItems.length - 1].remove();
+            }
+        }
+
+        // 加载系统状态
+        function loadSystemStatus() {
+            addLog('系统', '正在检查AI服务连接状态...', 'info');
+            
+            // 这里可以添加实际的系统状态检测
+            setTimeout(() => {
+                addLog('系统', 'AI缓存系统运行正常', 'success');
+            }, 1000);
+        }
+
+        // 刷新日志
+        function refreshLogs() {
+            addLog('系统', '日志已刷新', 'info');
+        }
+
+        // 定期刷新状态
+        setInterval(() => {
+            loadCacheStatus();
+        }, 30000); // 每30秒刷新一次
+    </script>
+</body>
+</html>

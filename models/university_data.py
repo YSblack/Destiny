@@ -621,7 +621,9 @@ class UniversityDatabase:
         results = {}
         
         for name, data in self.universities.items():
-            if data.get('location', {}).get('province') == province:
+            # 同时检查 province 字段和 location.province 字段
+            data_province = data.get('province') or data.get('location', {}).get('province')
+            if data_province == province:
                 results[name] = data
         
         return results

@@ -1,0 +1,134 @@
+# AI服务配置文件
+# 请在此配置您的AI服务API密钥和服务设置
+
+ai_services:
+  # 智朴清言 (ChatGLM) - 开放平台API
+  chatglm:
+    enabled: true
+    api_key: "YOUR_CHATGLM_API_KEY"  # 请在 https://open.bigmodel.cn 申请API密钥
+    base_url: "https://open.bigmodel.cn/api/paas/v4/chat/completions"
+    model: "glm-4"
+    max_tokens: 2000
+    temperature: 0.1
+    timeout: 30
+    priority: 1  # 优先级，数字越小优先级越高
+    # 备用模型配置
+    fallback_models: ["glm-3-turbo", "chatglm3-6b"]
+    
+  # 通义千问 (Qwen)
+  qwen:
+    enabled: false  # 暂时禁用，需要配置API密钥
+    api_key: "YOUR_QWEN_API_KEY"
+    base_url: "https://dashscope.aliyuncs.com/api/v1/services/aigc/text-generation/generation"
+    model: "qwen-turbo"
+    max_tokens: 2000
+    temperature: 0.1
+    timeout: 30
+    priority: 2
+    
+  # 本地LLM服务 (Ollama)
+  local_llm:
+    enabled: false  # 默认禁用，需要本地安装Ollama
+    base_url: "http://localhost:11434/api/generate"
+    model: "llama2:13b"
+    timeout: 60
+    priority: 3
+
+# 缓存设置
+cache:
+  enabled: true
+  duration_hours: 6  # 缓存有效期（小时）
+  database_path: "data/ai_cache.db"
+  max_entries: 10000  # 最大缓存条目数
+  cleanup_interval_hours: 24  # 自动清理间隔（小时）
+
+# 数据质量设置
+data_quality:
+  min_confidence: 0.3  # 最低可信度阈值
+  enable_fallback: true  # 启用备用数据生成
+  enable_validation: true  # 启用数据验证
+  
+# 并发设置
+concurrency:
+  max_workers: 10  # 最大并发工作线程数
+  batch_size: 20  # 批量处理大小
+  rate_limit_requests_per_minute: 60  # 每分钟最大请求数
+
+# 日志设置
+logging:
+  level: "INFO"
+  enable_api_logs: true
+  enable_cache_logs: true
+  log_file: "logs/ai_service.log"
+
+# 实时推荐设置
+recommendation:
+  enable_realtime: true  # 启用实时推荐
+  candidate_multiplier: 2.0  # 候选院校倍数
+  score_tolerance: 50  # 分数容差范围
+  
+# 大学分类配置
+university_categories:
+  top_tier:
+    keywords: ["清华", "北大", "复旦", "交大", "浙大"]
+    base_score_range: [680, 750]
+    
+  985_211:
+    keywords: ["985", "211", "南大", "中大", "华科"]
+    base_score_range: [620, 680]
+    
+  key_universities:
+    keywords: ["理工", "师范", "医科", "财经"]
+    base_score_range: [580, 620]
+    
+  regular_universities:
+    keywords: ["大学", "学院"]
+    base_score_range: [500, 580]
+
+# 省份映射配置
+province_mapping:
+  # 当前有数据的省份
+  available_provinces:
+    - "江苏"
+    - "山西" 
+    - "广东"
+    - "北京"
+    - "上海"
+    
+  # 参考省份映射（无数据省份使用相似省份的数据）
+  reference_mapping:
+    "重庆": "四川"
+    "云南": "广东"
+    "贵州": "四川"
+    "西藏": "四川"
+    "新疆": "山西"
+    "宁夏": "山西"
+    "青海": "山西"
+    "甘肃": "山西"
+    "陕西": "山西"
+    "河南": "山西"
+    "河北": "山西"
+    "山东": "江苏"
+    "安徽": "江苏"
+    "浙江": "江苏"
+    "福建": "广东"
+    "江西": "广东"
+    "湖南": "广东"
+    "湖北": "广东"
+    "广西": "广东"
+    "海南": "广东"
+    "四川": "广东"
+    "天津": "北京"
+    "内蒙古": "山西"
+    "辽宁": "山西"
+    "吉林": "山西"
+    "黑龙江": "山西"
+
+# API端点配置
+api_endpoints:
+  university_data: "/api/realtime/university_data"
+  batch_scores: "/api/realtime/batch_scores"
+  province_scores: "/api/realtime/province_scores"
+  recommendation: "/api/realtime/recommendation"
+  cache_status: "/api/realtime/cache_status"
+  clean_cache: "/api/realtime/clean_cache" 

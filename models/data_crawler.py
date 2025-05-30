@@ -244,29 +244,32 @@ class UniversityDataCrawler:
         enhanced_data = basic_data.copy()
         
         try:
-            # 1. 尝试获取官网最新信息
-            website = basic_data.get('website', '')
+            # 1. 获取最新的官网地址
+            website = self._get_university_website(name)
+            enhanced_data['website'] = website
+            
+            # 2. 尝试获取官网最新信息
             if website:
                 web_info = self._fetch_from_official_website(website)
                 if web_info:
                     enhanced_data.update(web_info)
             
-            # 2. 获取最新招生信息
+            # 3. 获取最新招生信息
             enrollment_info = self._fetch_enrollment_info(name)
             if enrollment_info:
                 enhanced_data['enrollment_info'] = enrollment_info
             
-            # 3. 获取专业设置信息
+            # 4. 获取专业设置信息
             majors_info = self._fetch_majors_info(name)
             if majors_info:
                 enhanced_data['majors'] = majors_info
             
-            # 4. 获取就业信息
+            # 5. 获取就业信息
             employment_info = self._fetch_employment_info(name)
             if employment_info:
                 enhanced_data['employment'] = employment_info
             
-            # 5. 更新时间戳
+            # 6. 更新时间戳
             enhanced_data['last_updated'] = datetime.now().isoformat()
             enhanced_data['data_source'] = '网络实时获取'
             
@@ -280,45 +283,71 @@ class UniversityDataCrawler:
     def _fetch_from_official_website(self, website: str) -> Dict[str, Any]:
         """从官网获取最新信息"""
         try:
-            response = self.session.get(website, timeout=10)
-            if response.status_code == 200:
-                soup = BeautifulSoup(response.text, 'html.parser')
-                
-                # 提取基本信息
-                info = {}
-                
-                # 尝试获取学校简介
-                intro_keywords = ['学校简介', '学校概况', '关于我们', '学校介绍']
-                for keyword in intro_keywords:
-                    intro_element = soup.find(text=re.compile(keyword))
-                    if intro_element:
-                        parent = intro_element.parent
-                        if parent:
-                            info['description'] = parent.get_text(strip=True)[:500]
-                            break
-                
-                # 尝试获取联系方式
-                contact_patterns = [
-                    r'联系电话[：:]\s*(\d{3,4}-?\d{7,8})',
-                    r'招生热线[：:]\s*(\d{3,4}-?\d{7,8})',
-                    r'电话[：:]\s*(\d{3,4}-?\d{7,8})'
-                ]
-                
-                page_text = soup.get_text()
-                for pattern in contact_patterns:
-                    match = re.search(pattern, page_text)
-                    if match:
-                        info['phone'] = match.group(1)
-                        break
-                
-                # 尝试获取邮箱
-                email_pattern = r'[\w\.-]+@[\w\.-]+\.\w+'
-                email_match = re.search(email_pattern, page_text)
-                if email_match:
-                    info['email'] = email_match.group(0)
-                
-                return info
-                
+            # 设置重试次数和超时时间
+            max_retries = 3
+            timeout = 10
+            
+            for attempt in range(max_retries):
+                try:
+                    # 尝试不验证SSL证书
+                    response = self.session.get(
+                        website, 
+                        timeout=timeout,
+                        verify=False  # 禁用SSL验证
+                    )
+                    
+                    if response.status_code == 200:
+                        soup = BeautifulSoup(response.text, 'html.parser')
+                        
+                        # 提取基本信息
+                        info = {}
+                        
+                        # 尝试获取学校简介
+                        intro_keywords = ['学校简介', '学校概况', '关于我们', '学校介绍']
+                        for keyword in intro_keywords:
+                            intro_element = soup.find(text=re.compile(keyword))
+                            if intro_element:
+                                parent = intro_element.parent
+                                if parent:
+                                    info['description'] = parent.get_text(strip=True)[:500]
+                                    break
+                        
+                        # 尝试获取联系方式
+                        contact_patterns = [
+                            r'联系电话[：:]\s*(\d{3,4}-?\d{7,8})',
+                            r'招生热线[：:]\s*(\d{3,4}-?\d{7,8})',
+                            r'电话[：:]\s*(\d{3,4}-?\d{7,8})'
+                        ]
+                        
+                        page_text = soup.get_text()
+                        for pattern in contact_patterns:
+                            match = re.search(pattern, page_text)
+                            if match:
+                                info['phone'] = match.group(1)
+                                break
+                        
+                        # 尝试获取邮箱
+                        email_pattern = r'[\w\.-]+@[\w\.-]+\.\w+'
+                        email_match = re.search(email_pattern, page_text)
+                        if email_match:
+                            info['email'] = email_match.group(0)
+                        
+                        return info
+                    else:
+                        return {}
+                        
+                except requests.exceptions.SSLError as e:
+                    self.logger.warning(f"SSL错误 {website} (尝试 {attempt + 1}/{max_retries}): {e}")
+                    if attempt == max_retries - 1:
+                        raise
+                    continue
+                        
+                except requests.exceptions.RequestException as e:
+                    self.logger.warning(f"请求错误 {website} (尝试 {attempt + 1}/{max_retries}): {e}")
+                    if attempt == max_retries - 1:
+                        raise
+                    continue
+                    
         except Exception as e:
             self.logger.warning(f"获取官网信息失败 {website}: {e}")
         
@@ -823,6 +852,406 @@ class UniversityDataCrawler:
                 except Exception as e:
                     self.logger.warning(f"获取 {university} 数据失败: {e}")
                     continue
+
+    def _get_university_website(self, university_name: str) -> str:
+        """获取学校的实际官网地址"""
+        try:
+            # 1. 直接使用搜索引擎获取官网（优先级最高）
+            self.logger.info(f"正在通过搜索引擎查找 {university_name} 的官网...")
+            
+            search_engines = [
+                # 百度搜索
+                {
+                    'name': '百度',
+                    'url': f"https://www.baidu.com/s?wd={university_name}官网",
+                    'pattern': r'https?://[^\s<>"\']+?\.edu\.cn[^\s<>"\']*'
+                },
+                # 搜狗搜索
+                {
+                    'name': '搜狗',
+                    'url': f"https://www.sogou.com/web?query={university_name}官网",
+                    'pattern': r'https?://[^\s<>"\']+?\.edu\.cn[^\s<>"\']*'
+                },
+                # 360搜索
+                {
+                    'name': '360',
+                    'url': f"https://www.so.com/s?q={university_name}官网",
+                    'pattern': r'https?://[^\s<>"\']+?\.edu\.cn[^\s<>"\']*'
+                }
+            ]
+            
+            for engine in search_engines:
+                try:
+                    self.logger.info(f"正在使用{engine['name']}搜索 {university_name} 官网...")
+                    response = self.session.get(engine['url'], timeout=15)
+                    if response.status_code == 200:
+                        # 使用正则表达式查找所有可能的官网链接
+                        matches = re.findall(engine['pattern'], response.text)
+                        self.logger.info(f"在{engine['name']}中找到 {len(matches)} 个候选链接")
+                        
+                        backup_url = None  # 备选链接
+                        
+                        for url in matches:
+                            # 强化URL清理，移除可能的尾随字符和格式符号
+                            original_url = url
+                            
+                            # 第一步：基本清理
+                            url = url.split('&')[0].split('?')[0].split('"')[0].split("'")[0]
+                            
+                            # 第二步：移除markdown格式和额外文本
+                            url = url.split('==')[0]  # 移除==符号及其后内容
+                            url = url.split('**')[0]  # 移除**符号及其后内容
+                            url = url.split('\\n')[0]  # 移除\n及其后内容
+                            url = url.split('\n')[0]   # 移除换行符及其后内容
+                            
+                            # 第三步：移除HTML标签和特殊字符
+                            url = re.sub(r'<[^>]+>', '', url)  # 移除HTML标签
+                            url = re.sub(r'[^\w\-\./:?=&%]', '', url)  # 保留URL有效字符
+                            
+                            # 第四步：确保URL格式正确
+                            if not url.startswith(('http://', 'https://')):
+                                continue
+                            
+                            # 第五步：移除尾随的标点符号
+                            if not url.endswith('/'):
+                                url = url.rstrip('.,;:)]}>}')
+                            
+                            # 第六步：验证URL格式
+                            if '://' not in url or not url.endswith('.edu.cn') and not '.edu.cn/' in url:
+                                continue
+                            
+                            self.logger.debug(f"URL清理: {original_url} -> {url}")
+                            
+                            # 过滤掉明显不是主页的链接
+                            skip_patterns = [
+                                'jwglxt',     # 教务系统
+                                'login',      # 登录页面
+                                'sso',        # 单点登录
+                                'cas',        # 认证系统
+                                'oa',         # 办公系统
+                                'mail',       # 邮件系统
+                                'lib',        # 图书馆
+                                'zs',         # 招生
+                                'jw',         # 教务
+                                'my',         # 个人中心
+                                'student',    # 学生系统
+                                'teacher',    # 教师系统
+                                'admin',      # 管理系统
+                                'bbs',        # 论坛
+                                'forum',      # 论坛
+                                'admission',  # 招生
+                                'graduate',   # 研究生
+                                'news',       # 新闻
+                                'employment', # 就业
+                                'career',     # 就业
+                                'job',        # 工作
+                                'alumni',     # 校友
+                                'hospital',   # 医院
+                                'clinic',     # 诊所
+                                'portal',     # 门户子系统
+                                'service',    # 服务系统
+                                'system',     # 系统
+                                'yz',         # 研究生院
+                                'yjs',        # 研究生院
+                                'jxjy',       # 继续教育
+                                'jxjyxy',     # 继续教育学院
+                                'chengjiao',  # 成人教育
+                                'wlxy',       # 网络学院
+                                'network',    # 网络学院
+                                'adult',      # 成人教育
+                                'continue',   # 继续教育
+                                'international', # 国际学院
+                                'gjxy',       # 国际学院
+                                'english',    # 英文版（优先级较低）
+                                'en',         # 英文版
+                                'dean',       # 教务部
+                                'jwb',        # 教务部
+                                'jwc',        # 教务处
+                                'academic',   # 学术相关子站
+                                'research',   # 研究相关子站
+                                'finance',    # 财务处
+                                'hr',         # 人事处
+                                'rsc',        # 人事处
+                                'office',     # 办公室
+                                'party',      # 党委
+                                'union',      # 工会
+                                'youth',      # 团委
+                                'security',   # 保卫处
+                                'logistics'   # 后勤处
+                            ]
+                            
+                            # 检查是否包含要跳过的模式
+                            if any(pattern in url.lower() for pattern in skip_patterns):
+                                self.logger.info(f"跳过子系统链接: {url}")
+                                continue
+                            
+                            # 优先选择根域名链接（www.xxx.edu.cn 或 xxx.edu.cn）
+                            if '//' in url:
+                                domain_part = url.split('//')[1].split('/')[0]
+                                # 检查是否是主域名
+                                if domain_part.startswith('www.') and domain_part.endswith('.edu.cn'):
+                                    priority = 1  # 最高优先级
+                                    # 对于主域名，直接返回，不需要进一步验证内容
+                                    main_domain_university = domain_part.replace('www.', '').replace('.edu.cn', '')
+                                    if any(keyword in main_domain_university.lower() or keyword in university_name.lower() for keyword in [university_name.replace('大学', ''), main_domain_university]):
+                                        self.logger.info(f"通过{engine['name']}找到主域名，直接返回: {url}")
+                                        return url
+                                elif domain_part.endswith('.edu.cn') and '.' in domain_part:
+                                    # 检查是否是子域名
+                                    parts = domain_part.split('.')
+                                    if len(parts) == 3:  # xxx.edu.cn
+                                        priority = 1
+                                        # 对于根域名也直接返回
+                                        root_domain_university = parts[0]
+                                        if any(keyword in root_domain_university.lower() or keyword in university_name.lower() for keyword in [university_name.replace('大学', ''), root_domain_university]):
+                                            self.logger.info(f"通过{engine['name']}找到根域名，直接返回: {url}")
+                                            return url
+                                    else:  # sub.xxx.edu.cn
+                                        priority = 3
+                                else:
+                                    priority = 4
+                            else:
+                                priority = 5
+                            
+                            # 同时检查路径长度
+                            path_parts = url.split('/')
+                            if len(path_parts) <= 4:  # 根域名或简短路径
+                                priority = min(priority, 2)
+                            
+                            self.logger.info(f"正在验证链接 (优先级{priority}): {url}")
+                            
+                            # 验证链接是否可访问
+                            try:
+                                resp = self.session.get(url, timeout=8, verify=False)
+                                if resp.status_code == 200:
+                                    # 改进的内容检测 - 更宽松的匹配
+                                    content = resp.text.lower()
+                                    university_keywords = [
+                                        university_name.lower(), 
+                                        university_name.replace('大学', '').lower(),
+                                        '大学', 'university', 'college', '学校', '高校', '学院',
+                                        '教育', 'education', '学术', 'academic'
+                                    ]
+                                    
+                                    # 对于主域名，降低内容检测要求
+                                    if priority == 1:
+                                        # 主域名只需要包含基本的教育相关词汇即可
+                                        basic_keywords = ['大学', 'university', 'college', '学校', '教育', 'education']
+                                        if any(keyword in content for keyword in basic_keywords):
+                                            self.logger.info(f"通过{engine['name']}成功找到 {university_name} 的高优先级官网: {url}")
+                                            return url
+                                    else:
+                                        # 其他链接需要更严格的匹配
+                                        if any(keyword in content for keyword in university_keywords):
+                                            # 根据优先级返回，优先级1最高
+                                            if priority <= 2:
+                                                self.logger.info(f"通过{engine['name']}成功找到 {university_name} 的高优先级官网: {url}")
+                                                return url
+                                            else:
+                                                self.logger.info(f"找到备选官网 (优先级{priority}): {url}")
+                                                # 继续寻找更高优先级的链接，如果没找到再返回这个
+                                                backup_url = url
+                                        else:
+                                            self.logger.warning(f"链接 {url} 不包含大学相关内容")
+                            except Exception as e:
+                                self.logger.warning(f"验证链接 {url} 失败: {e}")
+                                continue
+                        
+                        # 如果在当前搜索引擎中没有找到高优先级链接，但有备选链接，则返回备选链接
+                        if backup_url:
+                            self.logger.info(f"通过{engine['name']}返回备选官网: {backup_url}")
+                            return backup_url
+                            
+                except Exception as e:
+                   self.logger.warning(f"{engine['name']}搜索失败: {e}")
+                continue
+            
+            # 2. 如果搜索引擎都失败了，尝试从预定义映射中获取
+            self.logger.info(f"搜索引擎未找到 {university_name} 官网，尝试预定义映射...")
+            known_websites = {
+                # 985院校
+                "清华大学": "https://www.tsinghua.edu.cn",
+                "北京大学": "https://www.pku.edu.cn",
+                "浙江大学": "https://www.zju.edu.cn",
+                "复旦大学": "https://www.fudan.edu.cn",
+                "上海交通大学": "https://www.sjtu.edu.cn",
+                "南京大学": "https://www.nju.edu.cn",
+                "武汉大学": "https://www.whu.edu.cn",
+                "中山大学": "https://www.sysu.edu.cn",
+                "北京理工大学": "https://www.bit.edu.cn",
+                "华南理工大学": "https://www.scut.edu.cn",
+                "哈尔滨工业大学": "https://www.hit.edu.cn",
+                "西安交通大学": "https://www.xjtu.edu.cn",
+                "中国科学技术大学": "https://www.ustc.edu.cn",
+                "华中科技大学": "https://www.hust.edu.cn",
+                "天津大学": "https://www.tju.edu.cn",
+                "东南大学": "https://www.seu.edu.cn",
+                "厦门大学": "https://www.xmu.edu.cn",
+                "山东大学": "https://www.sdu.edu.cn",
+                "中南大学": "https://www.csu.edu.cn",
+                "大连理工大学": "https://www.dlut.edu.cn",
+                "北京航空航天大学": "https://www.buaa.edu.cn",
+                "四川大学": "https://www.scu.edu.cn",
+                "电子科技大学": "https://www.uestc.edu.cn",
+                "同济大学": "https://www.tongji.edu.cn",
+                "南开大学": "https://www.nankai.edu.cn",
+                "中国人民大学": "https://www.ruc.edu.cn",
+                "北京师范大学": "https://www.bnu.edu.cn",
+                "国防科技大学": "https://www.nudt.edu.cn",
+                
+                # 211院校
+                "北京工业大学": "https://www.bjut.edu.cn",
+                "北京科技大学": "https://www.ustb.edu.cn",
+                "北京化工大学": "https://www.buct.edu.cn",
+                "北京邮电大学": "https://www.bupt.edu.cn",
+                "中国农业大学": "https://www.cau.edu.cn",
+                "北京林业大学": "https://www.bjfu.edu.cn",
+                "中国传媒大学": "https://www.cuc.edu.cn",
+                "中央民族大学": "https://www.muc.edu.cn",
+                "北京中医药大学": "https://www.bucm.edu.cn",
+                "对外经济贸易大学": "https://www.uibe.edu.cn",
+                "中央财经大学": "https://www.cufe.edu.cn",
+                "中国政法大学": "https://www.cupl.edu.cn",
+                "华北电力大学": "https://www.ncepu.edu.cn",
+                "中国矿业大学(北京)": "https://www.cumtb.edu.cn",
+                "中国石油大学(北京)": "https://www.cup.edu.cn",
+                "中国地质大学(北京)": "https://www.cugb.edu.cn",
+                "天津医科大学": "https://www.tmu.edu.cn",
+                "河北工业大学": "https://www.hebut.edu.cn",
+                "太原理工大学": "https://www.tyut.edu.cn",
+                "内蒙古大学": "https://www.imu.edu.cn",
+                "辽宁大学": "https://www.lnu.edu.cn",
+                "大连海事大学": "https://www.dlmu.edu.cn",
+                "延边大学": "https://www.ybu.edu.cn",
+                "东北师范大学": "https://www.nenu.edu.cn",
+                "哈尔滨工程大学": "https://www.hrbeu.edu.cn",
+                "东北农业大学": "https://www.neau.edu.cn",
+                "东北林业大学": "https://www.nefu.edu.cn",
+                "华东理工大学": "https://www.ecust.edu.cn",
+                "东华大学": "https://www.dhu.edu.cn",
+                "上海外国语大学": "https://www.shisu.edu.cn",
+                "上海财经大学": "https://www.shufe.edu.cn",
+                "上海大学": "https://www.shu.edu.cn",
+                "第二军医大学": "https://www.smmu.edu.cn",
+                "南京理工大学": "https://www.njust.edu.cn",
+                "南京航空航天大学": "https://www.nuaa.edu.cn",
+                "中国矿业大学": "https://www.cumt.edu.cn",
+                "河海大学": "https://www.hhu.edu.cn",
+                "江南大学": "https://www.jiangnan.edu.cn",
+                "南京农业大学": "https://www.njau.edu.cn",
+                "中国药科大学": "https://www.cpu.edu.cn",
+                "南京师范大学": "https://www.njnu.edu.cn",
+                "安徽大学": "https://www.ahu.edu.cn",
+                "合肥工业大学": "https://www.hfut.edu.cn",
+                "福州大学": "https://www.fzu.edu.cn",
+                "南昌大学": "https://www.ncu.edu.cn",
+                "河南大学": "https://www.henu.edu.cn",
+                "中国地质大学(武汉)": "https://www.cug.edu.cn",
+                "武汉理工大学": "https://www.whut.edu.cn",
+                "华中农业大学": "https://www.hzau.edu.cn",
+                "华中师范大学": "https://www.ccnu.edu.cn",
+                "中南财经政法大学": "https://www.zuel.edu.cn",
+                "湖南师范大学": "https://www.hunnu.edu.cn",
+                "暨南大学": "https://www.jnu.edu.cn",
+                "华南师范大学": "https://www.scnu.edu.cn",
+                "广西大学": "https://www.gxu.edu.cn",
+                "海南大学": "https://www.hainu.edu.cn",
+                "西南交通大学": "https://www.swjtu.edu.cn",
+                "西南财经大学": "https://www.swufe.edu.cn",
+                "贵州大学": "https://www.gzu.edu.cn",
+                "云南大学": "https://www.ynu.edu.cn",
+                "西藏大学": "https://www.utibet.edu.cn",
+                "西北大学": "https://www.nwu.edu.cn",
+                "西安电子科技大学": "https://www.xidian.edu.cn",
+                "长安大学": "https://www.chd.edu.cn",
+                "陕西师范大学": "https://www.snnu.edu.cn",
+                "青海大学": "https://www.qhu.edu.cn",
+                "宁夏大学": "https://www.nxu.edu.cn",
+                "新疆大学": "https://www.xju.edu.cn",
+                "石河子大学": "https://www.shzu.edu.cn",
+                
+                # 其他知名院校
+                "福建师范大学": "https://www.fjnu.edu.cn",
+                "山西大学": "https://www.sxu.edu.cn",
+                "河北大学": "https://www.hbu.edu.cn",
+                "河南师范大学": "https://www.htu.edu.cn",
+                "江西师范大学": "https://www.jxnu.edu.cn",
+                "湖南大学": "https://www.hnu.edu.cn",
+                "湘潭大学": "https://www.xtu.edu.cn",
+                "广东工业大学": "https://www.gdut.edu.cn",
+                "深圳大学": "https://www.szu.edu.cn",
+                "广西师范大学": "https://www.gxnu.edu.cn",
+                "重庆大学": "https://www.cqu.edu.cn",
+                "西南大学": "https://www.swu.edu.cn",
+                "四川师范大学": "https://www.sicnu.edu.cn",
+                "贵州师范大学": "https://www.gznu.edu.cn",
+                "云南师范大学": "https://www.ynnu.edu.cn",
+                "西北师范大学": "https://www.nwnu.edu.cn",
+                "新疆师范大学": "https://www.xjnu.edu.cn"
+            }
+            
+            if university_name in known_websites:
+                self.logger.info(f"从预定义映射找到 {university_name} 的官网: {known_websites[university_name]}")
+                return known_websites[university_name]
+            
+            # 3. 尝试常见的域名模式
+            self.logger.info(f"尝试常见域名模式为 {university_name} 生成官网...")
+            
+            # 首先尝试使用拼音
+            try:
+                from pypinyin import lazy_pinyin
+                pinyin = ''.join(lazy_pinyin(university_name.replace('大学', '')))
+                common_domains = [
+                    f"https://www.{pinyin}.edu.cn",
+                    f"https://{pinyin}.edu.cn"
+                ]
+            except:
+                common_domains = []
+            
+            # 然后尝试其他常见模式
+            common_domains.extend([
+                f"https://www.{university_name.replace('大学', '')}.edu.cn",
+                f"https://{university_name.replace('大学', '')}.edu.cn",
+                f"https://www.{university_name}.edu.cn",
+                f"https://{university_name}.edu.cn"
+            ])
+            
+            # 4. 尝试访问每个域名
+            for domain in common_domains:
+                try:
+                    self.logger.info(f"尝试访问域名: {domain}")
+                    resp = self.session.get(domain, timeout=5, verify=False)
+                    if resp.status_code == 200:
+                        # 检查是否是真正的官网
+                        content = resp.text.lower()
+                        university_keywords = [university_name, '大学', 'university', 'college', '学校']
+                        if any(keyword.lower() in content for keyword in university_keywords):
+                            self.logger.info(f"通过域名模式找到 {university_name} 的官网: {domain}")
+                            return domain
+                except Exception as e:
+                    self.logger.warning(f"访问域名 {domain} 失败: {e}")
+                    continue
+            
+            # 5. 如果都失败了，返回默认域名（使用拼音）
+            try:
+                from pypinyin import lazy_pinyin
+                pinyin = ''.join(lazy_pinyin(university_name.replace('大学', '')))
+                default_url = f"https://www.{pinyin}.edu.cn"
+                self.logger.info(f"返回默认拼音域名: {default_url}")
+                return default_url
+            except:
+                default_url = f"https://www.{university_name.replace('大学', '')}.edu.cn"
+                self.logger.info(f"返回默认域名: {default_url}")
+                return default_url
+            
+        except Exception as e:
+            self.logger.warning(f"获取{university_name}官网地址失败: {e}")
+            try:
+                from pypinyin import lazy_pinyin
+                pinyin = ''.join(lazy_pinyin(university_name.replace('大学', '')))
+                return f"https://www.{pinyin}.edu.cn"
+            except:
+                return f"https://www.{university_name.replace('大学', '')}.edu.cn"
 
 
 def update_university_database():

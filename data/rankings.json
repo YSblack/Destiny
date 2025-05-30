@@ -27,27 +27,27 @@
   "中国科学技术大学": {
     "qs_world": null,
     "times_world": null,
-    "domestic": 791
+    "domestic": 416
   },
   "南京大学": {
     "qs_world": null,
     "times_world": null,
-    "domestic": 656
+    "domestic": 217
   },
   "西安交通大学": {
     "qs_world": null,
     "times_world": null,
-    "domestic": 556
+    "domestic": 725
   },
   "哈尔滨工业大学": {
     "qs_world": null,
     "times_world": null,
-    "domestic": 503
+    "domestic": 168
   },
   "中国人民大学": {
-    "qs_world": 328,
-    "times_world": 325,
-    "domestic": 6
+    "qs_world": 111,
+    "times_world": 75,
+    "domestic": 20
   },
   "北京航空航天大学": {
     "domestic_rank": 34,

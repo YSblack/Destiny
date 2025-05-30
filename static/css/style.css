@@ -195,6 +195,25 @@ body {
     color: #6c757d;
 }
 
+/* 数据来源信息样式 */
+.data-source-info {
+    margin: 10px 0;
+    padding: 8px 12px;
+    background-color: #fff3cd;
+    border: 1px solid #ffeaa7;
+    border-radius: 6px;
+}
+
+.data-source-info small {
+    color: #856404;
+    font-weight: 500;
+}
+
+.data-source-info i {
+    color: #f39c12;
+    margin-right: 4px;
+}
+
 .card-actions {
     text-align: right;
     border-top: 1px solid #e9ecef;
@@ -420,8 +439,76 @@ body {
 /* 分数线网格 */
 .scores-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 1rem;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 15px;
+    margin-top: 15px;
+}
+
+/* 省份分组样式 */
+.scores-container {
+    margin-top: 15px;
+}
+
+.province-scores {
+    margin-bottom: 25px;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.province-title {
+    background-color: #f8f9fa;
+    color: #495057;
+    font-size: 1rem;
+    font-weight: 600;
+    margin: 0;
+    padding: 12px 20px;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.province-scores .scores-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 15px;
+    padding: 20px;
+    margin-top: 0;
+}
+
+/* 用户省份数据样式 */
+.province-scores.user-province {
+    border-color: #28a745;
+    background-color: #f8fff9;
+}
+
+.province-scores.user-province .province-title {
+    background-color: #d4edda;
+    color: #155724;
+    border-bottom-color: #c3e6cb;
+}
+
+/* 参考省份数据样式 */
+.province-scores.reference-province {
+    border-color: #ffc107;
+    background-color: #fffdf5;
+}
+
+.province-scores.reference-province .province-title {
+    background-color: #fff3cd;
+    color: #856404;
+    border-bottom-color: #ffeaa7;
+}
+
+/* 用户科目高亮 */
+.score-item.user-subject {
+    background-color: #e8f5e8;
+    border: 1px solid #28a745;
+    border-radius: 6px;
+    padding: 10px;
+}
+
+.score-item.user-subject .score-value {
+    color: #28a745;
+    font-weight: 600;
 }
 
 .score-item {
@@ -660,5 +747,481 @@ body {
     }
     100% {
         background-position: -200% 0;
+    }
+}
+
+/* 小尺寸警告框样式 */
+.alert-sm {
+    padding: 8px 12px;
+    font-size: 0.85rem;
+    border-radius: 6px;
+    margin: 8px 0;
+}
+
+.alert-sm small {
+    font-size: 0.8rem;
+}
+
+.alert-sm i {
+    font-size: 0.9rem;
+    margin-right: 6px;
+}
+
+/* 省份选择器样式 */
+.province-selector {
+    background: #f8f9fa;
+    padding: 1rem;
+    border-radius: 8px;
+    border: 1px solid #e9ecef;
+}
+
+.province-selector .form-label {
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 0.5rem;
+}
+
+.province-selector .form-select {
+    border: 1px solid #ced4da;
+    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+.province-selector .form-select:focus {
+    border-color: #80bdff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+/* 年份选择器特殊样式 */
+#yearSelect {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    font-weight: 500;
+}
+
+#yearSelect:focus {
+    box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+}
+
+#yearSelect option {
+    background: white;
+    color: #333;
+}
+
+/* 分数线信息卡片样式 */
+.score-info-card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    margin-bottom: 1rem;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.score-info-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+}
+
+.score-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.score-header h6 {
+    margin: 0;
+    font-weight: 600;
+}
+
+.score-header .badge {
+    background: rgba(255, 255, 255, 0.2) !important;
+    color: white;
+    font-size: 0.8rem;
+    padding: 0.25rem 0.5rem;
+}
+
+.score-content {
+    padding: 1.5rem;
+}
+
+.score-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.stat-item {
+    text-align: center;
+    padding: 0.75rem;
+    background: #f8f9fa;
+    border-radius: 8px;
+    transition: background-color 0.2s ease;
+}
+
+.stat-item:hover {
+    background: #e9ecef;
+}
+
+.stat-label {
+    font-size: 0.85rem;
+    color: #6c757d;
+    margin-bottom: 0.25rem;
+    font-weight: 500;
+}
+
+.stat-value {
+    font-size: 1.2rem;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.batch-info, .enrollment-info {
+    background: #e7f3ff;
+    border-left: 4px solid #0066cc;
+    padding: 0.5rem 0.75rem;
+    margin: 0.5rem 0;
+    border-radius: 0 4px 4px 0;
+    font-size: 0.9rem;
+}
+
+/* 专业分数线样式 */
+.major-scores {
+    margin-top: 1.5rem;
+    padding-top: 1rem;
+    border-top: 1px solid #e9ecef;
+}
+
+.major-scores h6 {
+    color: #495057;
+    margin-bottom: 0.75rem;
+    font-weight: 600;
+}
+
+.major-scores-list {
+    display: grid;
+    gap: 0.5rem;
+}
+
+.major-score-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem;
+    background: #f8f9fa;
+    border-radius: 6px;
+    font-size: 0.9rem;
+}
+
+.major-name {
+    font-weight: 500;
+    color: #495057;
+}
+
+.major-score {
+    color: #dc3545;
+    font-weight: 600;
+}
+
+.major-enrollment {
+    color: #6c757d;
+    font-size: 0.8rem;
+}
+
+/* 数据来源样式 */
+.data-source {
+    background: #f1f3f4;
+    border-radius: 6px;
+    padding: 0.5rem;
+    margin-top: 1rem;
+}
+
+.data-source small {
+    color: #5f6368;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+/* 历年对比样式 */
+.year-comparison {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    margin: 1rem 0;
+    overflow: hidden;
+}
+
+.year-comparison-header {
+    background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
+    padding: 1rem;
+    text-align: center;
+}
+
+.year-comparison-content {
+    padding: 1rem;
+}
+
+.year-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem;
+    margin: 0.5rem 0;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border-left: 4px solid #007bff;
+}
+
+.year-item.trending-up {
+    border-left-color: #dc3545;
+    background: #fff5f5;
+}
+
+.year-item.trending-down {
+    border-left-color: #28a745;
+    background: #f0fff4;
+}
+
+.year-label {
+    font-weight: 600;
+    color: #495057;
+}
+
+.year-score {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #007bff;
+}
+
+.year-trend {
+    font-size: 0.8rem;
+    padding: 0.2rem 0.5rem;
+    border-radius: 12px;
+    font-weight: 500;
+}
+
+.trend-up {
+    background: #fff5f5;
+    color: #dc3545;
+}
+
+.trend-down {
+    background: #f0fff4;
+    color: #28a745;
+}
+
+.trend-stable {
+    background: #f8f9fa;
+    color: #6c757d;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+    .province-selector .row {
+        --bs-gutter-x: 0.5rem;
+    }
+    
+    .province-selector .col-md-4,
+    .province-selector .col-md-3,
+    .province-selector .col-md-2 {
+        margin-bottom: 0.75rem;
+    }
+    
+    .score-stats {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .major-score-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.25rem;
+    }
+    
+    .year-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+}
+
+/* 加载动画优化 */
+.scores-container .spinner-border {
+    width: 2rem;
+    height: 2rem;
+    border-width: 0.25em;
+}
+
+.loading-text {
+    color: #6c757d;
+    font-size: 0.9rem;
+    margin-top: 0.5rem;
+}
+
+/* 查询按钮增强 */
+.province-selector .btn-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+    padding: 0.5rem 1rem;
+    font-weight: 500;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.province-selector .btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.province-selector .btn-primary:active {
+    transform: translateY(0);
+}
+
+/* 省份选择器标签样式 */
+.province-selector .form-label::after {
+    content: '*';
+    color: #dc3545;
+    margin-left: 0.25rem;
+}
+
+#yearSelect + .form-label::after {
+    content: '（最新）';
+    color: #28a745;
+    font-size: 0.75rem;
+    font-weight: normal;
+}
+
+/* 历年趋势图标 */
+.trend-icon {
+    display: inline-block;
+    margin-right: 0.25rem;
+}
+
+.trend-icon.up::before {
+    content: '📈';
+}
+
+.trend-icon.down::before {
+    content: '📉';
+}
+
+.trend-icon.stable::before {
+    content: '➡️';
+}
+
+/* ============== 录取分数线查询样式 ============== */
+
+/* 分数统计卡片 */
+.score-stat-card {
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 15px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    transition: transform 0.2s ease;
+}
+
+.score-stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.score-stat-label {
+    font-size: 0.85rem;
+    opacity: 0.9;
+    margin-bottom: 5px;
+}
+
+.score-stat-value {
+    font-size: 2rem;
+    font-weight: bold;
+    line-height: 1;
+}
+
+.score-stat-unit {
+    font-size: 0.9rem;
+    opacity: 0.8;
+    margin-top: 2px;
+}
+
+/* 信息项样式 */
+.info-item {
+    padding: 10px 0;
+    border-bottom: 1px solid #eee;
+}
+
+.info-item:last-child {
+    border-bottom: none;
+}
+
+.info-item i {
+    margin-right: 8px;
+    width: 16px;
+}
+
+/* 专业分数线部分 */
+.major-scores-section {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 20px;
+    border-left: 4px solid #007bff;
+}
+
+.major-scores-section h6 {
+    color: #495057;
+    margin-bottom: 15px;
+}
+
+/* 数据来源信息 */
+.data-source-info {
+    border-left: 4px solid #6c757d;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+}
+
+/* 录取分数线查询表单 */
+#score-query .form-label {
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 8px;
+}
+
+#score-query .form-control,
+#score-query .form-select {
+    border: 2px solid #e9ecef;
+    border-radius: 8px;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+#score-query .form-control:focus,
+#score-query .form-select:focus {
+    border-color: #17a2b8;
+    box-shadow: 0 0 0 0.2rem rgba(23, 162, 184, 0.25);
+}
+
+/* 查询结果容器 */
+#scoreQueryResults {
+    min-height: 50px;
+}
+
+/* 响应式调整 */
+@media (max-width: 768px) {
+    .score-stat-card {
+        margin-bottom: 10px;
+        padding: 15px;
+    }
+    
+    .score-stat-value {
+        font-size: 1.5rem;
+    }
+    
+    .major-scores-section {
+        padding: 15px;
+    }
+    
+    #score-query .col-md-3,
+    #score-query .col-md-2 {
+        margin-bottom: 15px;
     }
 } 
